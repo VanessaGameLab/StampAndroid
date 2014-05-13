@@ -22,4 +22,5 @@ dependencies {
     compile 'com.android.support:appcompat-v7:+'
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'me.dm7.barcodescanner:zbar:1.0'
+    compile 'com.google:bitcoinj:0.11.2'
 }
