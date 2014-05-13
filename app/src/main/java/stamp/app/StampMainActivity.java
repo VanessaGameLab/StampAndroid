@@ -2,8 +2,10 @@ package stamp.app;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.preference.PreferenceActivity;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -14,6 +16,11 @@ import com.google.bitcoin.core.ECKey;
 import com.google.bitcoin.crypto.DeterministicKey;
 import com.google.bitcoin.crypto.HDKeyDerivation;
 import com.google.bitcoin.crypto.MnemonicCode;
+import com.loopj.android.http.AsyncHttpClient;
+import com.loopj.android.http.AsyncHttpResponseHandler;
+import com.loopj.android.http.RequestParams;
+
+import org.apache.http.Header;
 
 import java.security.SecureRandom;
 import java.util.ArrayList;
@@ -120,14 +127,16 @@ public class StampMainActivity extends ActionBarActivity implements View.OnClick
 
         try {
 
-            String[] params = data.split("|");
+            String[] params = data.split("\\|");
             if(params.length < 3)
                 return;
 
 
             String cmd = params[0];
             //String service = params[1];
-            //String post_back = params[2];
+            String post_back = params[2];
+
+            Log.w("INFO", post_back);
 
             if(cmd.equals("mpk")) {
                 String[] seed = getWalletSeed().split(" ");
@@ -137,10 +146,35 @@ public class StampMainActivity extends ActionBarActivity implements View.OnClick
                 DeterministicKey ekprv = HDKeyDerivation.createMasterPrivateKey(rnd);
 
                 editText.setText(ekprv.serializePubB58());
+
+                AsyncHttpClient client = new AsyncHttpClient();
+                RequestParams rp = new RequestParams();
+                rp.put("mpk", ekprv.serializePubB58());
+
+
+                for(int i = 3; (i + 1) < params.length; i+= 2) {
+                    rp.put(params[i], params[i + 1]);
+                }
+
+
+                Log.w("INFO", rp.toString());
+
+                client.post(post_back, rp, new AsyncHttpResponseHandler() {
+                    @Override
+                    public void onSuccess(String response) {
+                        editText.setText(response);
+                    }
+                    @Override
+                    public void onFailure(int statusCode, Header[] headers,
+                                          byte[] responseBody, Throwable error) {
+
+                        editText.setText("" + statusCode);
+                    }
+                });
             }
         }
         catch(Exception e) {
-            // TODO
+            editText.setText(e.toString());
         }
     }
 }
