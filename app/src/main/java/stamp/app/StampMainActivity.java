@@ -13,15 +13,21 @@ import android.widget.Button;
 import android.widget.EditText;
 
 import com.google.bitcoin.core.ECKey;
+import com.google.bitcoin.core.NetworkParameters;
+import com.google.bitcoin.core.Transaction;
 import com.google.bitcoin.crypto.DeterministicKey;
 import com.google.bitcoin.crypto.HDKeyDerivation;
 import com.google.bitcoin.crypto.MnemonicCode;
+import com.google.bitcoin.crypto.MnemonicException;
+import com.google.bitcoin.params.MainNetParams;
 import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
 import org.apache.http.Header;
+import org.spongycastle.util.encoders.Hex;
 
+import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -139,42 +145,88 @@ public class StampMainActivity extends ActionBarActivity implements View.OnClick
             Log.w("INFO", post_back);
 
             if(cmd.equals("mpk")) {
-                String[] seed = getWalletSeed().split(" ");
-                MnemonicCode mc = new MnemonicCode();
-                byte[] rnd = mc.toEntropy(Arrays.asList(seed));
 
-                DeterministicKey ekprv = HDKeyDerivation.createMasterPrivateKey(rnd);
+                processMPKRequest(params, post_back);
 
-                editText.setText(ekprv.serializePubB58());
+            } else if(cmd.equals("sign")) {
 
-                AsyncHttpClient client = new AsyncHttpClient();
-                RequestParams rp = new RequestParams();
-                rp.put("mpk", ekprv.serializePubB58());
-
-
-                for(int i = 3; (i + 1) < params.length; i+= 2) {
-                    rp.put(params[i], params[i + 1]);
-                }
-
-
-                Log.w("INFO", rp.toString());
-
-                client.post(post_back, rp, new AsyncHttpResponseHandler() {
-                    @Override
-                    public void onSuccess(String response) {
-                        editText.setText(response);
-                    }
-                    @Override
-                    public void onFailure(int statusCode, Header[] headers,
-                                          byte[] responseBody, Throwable error) {
-
-                        editText.setText("" + statusCode);
-                    }
-                });
+                // Sign a TX.
+                processSignRequest(params, post_back);
             }
         }
         catch(Exception e) {
             editText.setText(e.toString());
         }
+    }
+
+    private void processSignRequest(String[] params, String post_back) throws Exception {
+
+        DeterministicKey ekprv = getHDWalletDeterministicKey();
+
+        AsyncHttpClient client = new AsyncHttpClient();
+        RequestParams rp = new RequestParams();
+
+        for(int i = 3; (i + 1) < params.length; i+= 2) {
+            rp.put(params[i], params[i + 1]);
+        }
+
+
+        Log.w("INFO", rp.toString());
+
+        client.get(post_back, rp, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(String response) {
+                Transaction tx = new Transaction(MainNetParams.get(), Hex.decode(response));
+
+                editText.setText(tx.getOutputs().get(0).toString());
+            }
+
+            @Override
+            public void onFailure(int statusCode, Header[] headers,
+                                  byte[] responseBody, Throwable error) {
+
+                editText.setText("" + statusCode);
+            }
+        });
+    }
+
+    private DeterministicKey getHDWalletDeterministicKey() throws Exception {
+        String[] seed = getWalletSeed().split(" ");
+        MnemonicCode mc = new MnemonicCode();
+        byte[] rnd = mc.toEntropy(Arrays.asList(seed));
+
+        return HDKeyDerivation.createMasterPrivateKey(rnd);
+    }
+
+    private void processMPKRequest(String[] params, String post_back) throws Exception {
+
+        DeterministicKey ekprv = getHDWalletDeterministicKey();
+
+        editText.setText(ekprv.serializePubB58());
+
+        AsyncHttpClient client = new AsyncHttpClient();
+        RequestParams rp = new RequestParams();
+        rp.put("mpk", ekprv.serializePubB58());
+
+
+        for(int i = 3; (i + 1) < params.length; i+= 2) {
+            rp.put(params[i], params[i + 1]);
+        }
+
+
+        Log.w("INFO", rp.toString());
+
+        client.post(post_back, rp, new AsyncHttpResponseHandler() {
+            @Override
+            public void onSuccess(String response) {
+                editText.setText(response);
+            }
+            @Override
+            public void onFailure(int statusCode, Header[] headers,
+                                  byte[] responseBody, Throwable error) {
+
+                editText.setText("" + statusCode);
+            }
+        });
     }
 }
