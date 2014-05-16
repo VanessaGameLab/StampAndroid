@@ -11,6 +11,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.google.bitcoin.core.ECKey;
 import com.google.bitcoin.core.NetworkParameters;
@@ -38,7 +39,6 @@ import java.util.List;
 public class StampMainActivity extends ActionBarActivity implements View.OnClickListener {
 
     Button scanButton;
-    EditText editText;
 
     static final int SCAN_QR_CODE = 1;
 
@@ -47,14 +47,8 @@ public class StampMainActivity extends ActionBarActivity implements View.OnClick
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_stamp_main);
 
-        String walletSeed = getWalletSeed();
-
         scanButton = (Button) findViewById(R.id.scan_button);
         scanButton.setOnClickListener(this);
-
-        editText = (EditText) findViewById(R.id.editText);
-
-        editText.setText(walletSeed);
     }
 
     private String getWalletSeed() {
@@ -121,9 +115,11 @@ public class StampMainActivity extends ActionBarActivity implements View.OnClick
         if (requestCode == SCAN_QR_CODE) {
             // Make sure the request was successful
             if (resultCode == RESULT_OK) {
-                // The user picked a contact.
-                // The Intent's data Uri identifies which contact was selected.
-                editText.setText(data.getStringExtra("result"));
+
+                Toast toast = Toast.makeText(getApplicationContext(),
+                        data.getStringExtra("result"), Toast.LENGTH_SHORT);
+                toast.show();
+
                 // Do something with the contact here (bigger example below)
                 processQRRequest(data.getStringExtra("result"));
             }
@@ -156,7 +152,10 @@ public class StampMainActivity extends ActionBarActivity implements View.OnClick
             }
         }
         catch(Exception e) {
-            editText.setText(e.toString());
+
+            Toast toast = Toast.makeText(getApplicationContext(),
+                    e.toString(), Toast.LENGTH_SHORT);
+            toast.show();
         }
     }
 
@@ -189,27 +188,37 @@ public class StampMainActivity extends ActionBarActivity implements View.OnClick
                     client.post(post_back, rp, new AsyncHttpResponseHandler() {
                         @Override
                         public void onSuccess(String response) {
-                            editText.setText(response);
+
+                            Toast toast = Toast.makeText(getApplicationContext(),
+                                    response, Toast.LENGTH_SHORT);
+                            toast.show();
                         }
                         @Override
                         public void onFailure(int statusCode, Header[] headers,
                                               byte[] responseBody, Throwable error) {
 
-                            editText.setText("" + statusCode);
+                            Toast toast = Toast.makeText(getApplicationContext(),
+                                    "" + statusCode, Toast.LENGTH_SHORT);
+                            toast.show();
                         }
                     });
 
                 } catch (Exception e) {
                     // TODO figure out what to do with it.
                 }
-                editText.setText(tx.getOutputs().get(0).toString());
+
+                Toast toast = Toast.makeText(getApplicationContext(),
+                        tx.getOutputs().get(0).toString(), Toast.LENGTH_SHORT);
+                toast.show();
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers,
                                   byte[] responseBody, Throwable error) {
 
-                editText.setText("" + statusCode);
+                Toast toast = Toast.makeText(getApplicationContext(),
+                        "" + statusCode, Toast.LENGTH_SHORT);
+                toast.show();
             }
         });
     }
@@ -226,7 +235,9 @@ public class StampMainActivity extends ActionBarActivity implements View.OnClick
 
         DeterministicKey ekprv = getHDWalletDeterministicKey();
 
-        editText.setText(ekprv.serializePubB58());
+        Toast toast = Toast.makeText(getApplicationContext(),
+                ekprv.serializePubB58(), Toast.LENGTH_SHORT);
+        toast.show();
 
         AsyncHttpClient client = new AsyncHttpClient();
         RequestParams rp = new RequestParams();
@@ -243,13 +254,18 @@ public class StampMainActivity extends ActionBarActivity implements View.OnClick
         client.post(post_back, rp, new AsyncHttpResponseHandler() {
             @Override
             public void onSuccess(String response) {
-                editText.setText(response);
+
+                Toast toast = Toast.makeText(getApplicationContext(),
+                        response, Toast.LENGTH_SHORT);
+                toast.show();
             }
             @Override
             public void onFailure(int statusCode, Header[] headers,
                                   byte[] responseBody, Throwable error) {
 
-                editText.setText("" + statusCode);
+                Toast toast = Toast.makeText(getApplicationContext(),
+                        "" + statusCode, Toast.LENGTH_SHORT);
+                toast.show();
             }
         });
     }
